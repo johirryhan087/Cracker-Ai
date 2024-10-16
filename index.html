@@ -99,6 +99,15 @@
       display: inline-block;
       text-align: center;
     }
+
+    .chat-history-card {
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .chat-history-card:hover {
+      transform: scale(1.02);
+    }
   </style>
 </head>
 <body class="bg-gray-100 flex flex-col min-h-screen">
@@ -301,17 +310,49 @@
 
   function loadChatHistory() {
     const history = JSON.parse(localStorage.getItem('chatHistory')) || [];
-    history.forEach(item => {
+    const historyContainer = document.createElement('div');
+    historyContainer.className = "space-y-4";
+
+    history.forEach((item, index) => {
+      const card = document.createElement('div');
+      card.className = "chat-history-card bg-white shadow-md rounded p-4";
+      card.textContent = `Chat ${index + 1}: ${item.messages[0].text.slice(0, 20)}...`;
+      card.addEventListener('click', () => openChatHistory(index));
+      historyContainer.appendChild(card);
+    });
+
+    chatbox.innerHTML = "";
+    chatbox.appendChild(historyContainer);
+  }
+
+  function openChatHistory(index) {
+    const history = JSON.parse(localStorage.getItem('chatHistory')) || [];
+    const chat = history[index];
+    chatbox.innerHTML = "";
+
+    chat.messages.forEach(item => {
       const messageElement = createMessageElement(item.text, item.alignment);
       chatbox.appendChild(messageElement);
     });
+
     chatbox.scrollTop = chatbox.scrollHeight;
   }
 
   function saveChatMessage(text, alignment) {
     const history = JSON.parse(localStorage.getItem('chatHistory')) || [];
-    history.push({ text, alignment });
+    if (!history.length || history[history.length - 1].finished) {
+      history.push({ messages: [], finished: false });
+    }
+    history[history.length - 1].messages.push({ text, alignment });
     localStorage.setItem('chatHistory', JSON.stringify(history));
+  }
+
+  function finishCurrentChat() {
+    const history = JSON.parse(localStorage.getItem('chatHistory')) || [];
+    if (history.length) {
+      history[history.length - 1].finished = true;
+      localStorage.setItem('chatHistory', JSON.stringify(history));
+    }
   }
 
   sendButton.addEventListener("click", () => {
